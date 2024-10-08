@@ -1,0 +1,85 @@
+eval_freq: 10000
+precision: bf16
+resume_from_path: none
+max_steps: 300000
+
+data_config:
+    data_type: molecule
+    geometry: 'graph'
+    coord_sys: 'intrinsic'
+    dataset: 'geom_qm9'
+    path: 'data/processed_qm9'
+    num_workers: 16
+    batch_size: 128
+    train_set_config:
+        n_eigenfuncs: 32
+        mode: 'train'
+        max_confs: 10
+    val_set_config:
+        batch_size: 128
+        n_eigenfuncs: 32
+        mode: 'val'
+        max_confs: 10
+        n_molecules: 50
+
+model_config:
+    target: models.mcf.MCF
+    params:
+        input_coord_num_channels: 75
+        input_signal_num_channels: 3
+        npoints_context: [1024] # needs to be a list
+        npoints_query: [1024] # needs to be a list
+        online_sample: True # if True, the model will generate samples in validation steps
+        online_evaluation: True # if True, the model will be evaluated on the fly in validation steps
+        randperm: False
+        threshold: 0.5 # threshold to calculate coverage
+
+        architecture_config:
+            target: models.architectures.PerceiverIO
+            params:
+                use_flash: True
+                use_mask: False # whether using attention mask
+                
+                # MCF-base
+                d_model: 1024
+                num_latents: 512
+                d_latents: 512 
+                num_blocks: 8
+                num_self_attends_per_block: 2 
+                num_self_attention_heads: 4
+                num_cross_attention_heads: 4
+
+                time_sinusoidal_dim: 256
+                signal_num_channels: ??? # defined by input_signal_num_channels in ae_model_config
+                proj_dim: ??? # defined by output_num_chanels in pos_embed_config
+                pos_embed_apply: both # either context, query or both
+                pos_embed_config:
+                    target: models.pos_embed.PosEmbed
+                    params:
+                        embed_type: trainable # ["none", "fourier", "trainable"]
+                        input_num_channels: 75
+                        output_num_channels: 128  # only used if embed_type == "trainable"
+                        num_freq: 10 #only used if embed_type == "fourier"
+
+        sampling_config:
+            sampling_fn: ddim # [standard, ddim]
+            num_timesteps_ddim: 50
+            eta_ddim: 1.0
+
+        loss_config:
+            target: torch.nn.MSELoss
+            params: 
+                reduction: 'none'
+                reduce: False
+
+        train_config:
+            lr: 1e-4
+            warmup_steps: 30000
+            max_steps: ??? # defined as global
+            beta_schedule: cosine
+            linear_start: 1e-4 # only used if linear
+            linear_end: 2e-2 # only used if linear
+            cosine_s: 8e-3 # only used if cosine
+            num_timesteps: 1000
+            ema_decay: 0.999
+            gradient_clip_val: 2.0

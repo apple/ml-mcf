@@ -1,0 +1,5 @@
+data
+artifacts
+ckpts
+logs
+*__pycache__

@@ -1,0 +1,23 @@
+eval_freq: 1
+# resume_from_path: "ckpts/mcf_drugs_s.ckpt"
+# resume_from_path: "ckpts/mcf_drugs_b.ckpt"
+resume_from_path: "ckpts/mcf_drugs_l.ckpt"
+
+data_config:
+    dataset: 'geom_drugs'
+    path: './data/processed_drugs'
+    num_workers: 8
+    val_set_config:
+        batch_size: 128
+        mode: 'test'
+        max_confs: 10000
+        n_molecules: 1000
+
+model_config:
+    params:
+        online_sample: True
+        online_evaluation: True
+
+        sampling_config:
+            sampling_fn: standard # [standard, ddim]
+            num_timesteps_ddim: 1000

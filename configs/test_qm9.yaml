@@ -1,0 +1,21 @@
+eval_freq: 1
+resume_from_path: "ckpts/mcf_qm9.ckpt"
+
+data_config:
+    dataset: 'geom_qm9'
+    path: './data/processed_qm9'
+    num_workers: 8
+    val_set_config:
+        batch_size: 256
+        mode: 'test'
+        max_confs: 10000
+        n_molecules: 1000
+
+model_config:
+    params:
+        online_sample: True
+        online_evaluation: True
+
+        sampling_config:
+            sampling_fn: standard # [standard, ddim]
+            num_timesteps_ddim: 1000
